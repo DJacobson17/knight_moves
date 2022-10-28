@@ -2,17 +2,12 @@ require_relative 'square'
 require 'pry-byebug'
 
 class Board # rubocop:disable Style/Documentation
-  attr_accessor :squares
+  attr_accessor :squares, :children
 
   def initialize
     a = [1, 2, 3, 4, 5, 6, 7, 8]
     array = a.product(a)
-    @squares = []
-    build_board(array)
-  end
-
-  def add_square(name)
-    @squares.push(Square.new(name))
+    @squares = build_board(array)
   end
 
   def find_square_by_name(name)
@@ -26,51 +21,43 @@ class Board # rubocop:disable Style/Documentation
     squares.length
   end
 
-  def add_edge(start_name, end_name)
-    find_square_by_name(start_name).children.push(find_square_by_name(end_name))
-  end
-
   def build_board(array)
-    array.each { |name| add_square(name) }
-  end
-
-
-  def calculate_children(square)
-    current_square = square.name.dup
-    current_square[0] -= 1
-    current_square[1] += 2
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-    current_square[1] -= 4
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-    current_square[0] -= 1
-    current_square[1] += 1
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-    current_square[1] += 2
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-    current_square[0] += 4
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-    current_square[1] -= 2
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-    current_square[0] -= 1
-    current_square[1] -= 1
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-    current_square[1] += 4
-    add_edge(square.name, current_square) if find_square_by_name(current_square)
-  end
-
-  def display_moves(square)
-    moves = []
-    calculate_children(square)
-    square.children.each do |child|
-      moves << child.name
+    result = []
+    array.each do |name| 
+      new_square = Square.new(name)
+      new_square.adj = calculate_adjacents(name)
+      result << new_square
     end
-    puts "You are on space #{square.name}."
-    puts "Your possible moves are: #{moves}."
+    result
+  end
+
+  def calculate_adjacents(square)
+    arr = []
+    shift = [[-2, -1], [+2, -1], [-2, +1], [+2, +1], [-1, +2], [-1, -2], [+1, +2], [+1, -2]]
+    shift.each do |move|
+      x = square[0] + move[0]
+      y = square[1] + move[1]
+      arr << [x, y]
+    end
+    valid(arr)
+  end
+
+  def valid(adj)
+    adj.select { |position| position[0].between?(1, 8) && position[1].between?(1, 8)}
+  end
+
+
+  def knight_moves(init, dest, result = [])
+    start_node = find_square_by_name(init)
+    end_node = find_square_by_name(dest)
+    return result if init.nil?
+    
+    calculate_children(start_node)
+    start_node.children.each { |child| result << child }
+    knight_moves(child, dest, )
   end
 
 end
 
 b = Board.new
-s = b.find_square_by_name([4, 4])
-b.display_moves(s)
-
+p b
